@@ -1,0 +1,4 @@
+/sfnt-metrics
+*.test
+*.out
+/dist/
