@@ -5,11 +5,11 @@ its font-wide metrics: units per em, ascender/descender, line gap, weight
 and width class, cap height, x-height, and glyph count.
 
 Font metrics live in a handful of binary tables inside the font file
-(`head`, `hhea`, `maxp`, `OS/2`), and most of the time getting at them means
-either opening the font in a design tool or pulling in a full font-parsing
-library just to read a few numbers. This tool parses the sfnt table
-directory directly and reads only what it needs, so it has no dependencies
-beyond the Go standard library.
+(`head`, `hhea`, `maxp`, `OS/2`, `name`), and most of the time getting at
+them means either opening the font in a design tool or pulling in a full
+font-parsing library just to read a few numbers. This tool parses the sfnt
+table directory directly and reads only what it needs, so it has no
+dependencies beyond the Go standard library.
 
 ## Usage
 
@@ -19,6 +19,8 @@ $ go build -o sfnt-metrics .
 $ ./sfnt-metrics ./testdata/Inter-Regular.ttf
 ./testdata/Inter-Regular.ttf
   format          TrueType
+  family          Inter
+  style           Regular
   units per em    2048
   glyphs          3892
   ascender        1984
@@ -42,6 +44,8 @@ Pass `--json` for machine-readable output:
 $ ./sfnt-metrics --json ./testdata/Inter-Regular.ttf
 {
   "format": "TrueType",
+  "family": "Inter",
+  "style": "Regular",
   "unitsPerEm": 2048,
   "numGlyphs": 3892,
   "ascender": 1984,
@@ -65,10 +69,18 @@ are only present when that table exists and, for `capHeight`/`xHeight`, when
 its version is 2 or higher. On fonts without them the fields are omitted
 from JSON and printed as `n/a` in text mode.
 
+`family` and `style` come from the `name` table. When a font has typographic
+family/subfamily names (IDs 16/17) those are preferred over the plain
+family/subfamily names (IDs 1/2), since the latter are constrained to the
+four classic style-linking groups and get mangled on fonts with more weights
+than that. If a font carries the same name in multiple languages or on both
+the Windows and Macintosh platforms, Windows Unicode US English is
+preferred; missing or malformed name data leaves both fields empty rather
+than failing the parse.
+
 ## Current limitations
 
 - Font collections (`.ttc` / `.otc`) are rejected, not read.
-- Family and style names (the `name` table) aren't extracted yet.
 - One file per invocation.
 
 ## License

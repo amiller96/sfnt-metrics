@@ -121,6 +121,10 @@ func Parse(data []byte) (*Metrics, error) {
 		}
 	}
 
+	if name, ok := tables["name"]; ok {
+		m.Family, m.Style = parseNameTable(data, name)
+	}
+
 	return m, nil
 }
 

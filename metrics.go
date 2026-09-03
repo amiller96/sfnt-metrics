@@ -6,6 +6,8 @@ package main
 // 2 is a pointer here and left nil (and dropped from JSON) on older fonts.
 type Metrics struct {
 	Format      string `json:"format"`
+	Family      string `json:"family,omitempty"`
+	Style       string `json:"style,omitempty"`
 	UnitsPerEm  uint16 `json:"unitsPerEm"`
 	NumGlyphs   uint16 `json:"numGlyphs"`
 	Ascender    int16  `json:"ascender"`

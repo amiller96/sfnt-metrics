@@ -50,6 +50,8 @@ func usage() {
 func printText(m *Metrics, path string) {
 	fmt.Printf("%s\n", path)
 	fmt.Printf("  format          %s\n", m.Format)
+	printOptionalString("family", m.Family)
+	printOptionalString("style", m.Style)
 	fmt.Printf("  units per em    %d\n", m.UnitsPerEm)
 	fmt.Printf("  glyphs          %d\n", m.NumGlyphs)
 	fmt.Printf("  ascender        %d\n", m.Ascender)
@@ -65,6 +67,14 @@ func printText(m *Metrics, path string) {
 	printOptionalUint16("win descent", m.WinDescent)
 	printOptionalInt16("cap height", m.CapHeight)
 	printOptionalInt16("x-height", m.XHeight)
+}
+
+func printOptionalString(label, v string) {
+	if v == "" {
+		fmt.Printf("  %-15s n/a\n", label)
+		return
+	}
+	fmt.Printf("  %-15s %s\n", label, v)
 }
 
 func printOptionalInt16(label string, v *int16) {
