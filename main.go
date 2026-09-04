@@ -9,6 +9,7 @@ import (
 
 func main() {
 	jsonOut := flag.Bool("json", false, "emit machine-readable JSON instead of a text summary")
+	fontIndex := flag.Int("font-index", 0, "index of the font to read within a collection (.ttc/.otc)")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -24,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	m, err := Parse(data)
+	m, err := Parse(data, *fontIndex)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sfnt-metrics: %s: %v\n", path, err)
 		os.Exit(1)
@@ -44,7 +45,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: sfnt-metrics [--json] <font-file>\n\nReads a TrueType or OpenType font file and prints its font-wide metrics.\n")
+	fmt.Fprintf(os.Stderr, "usage: sfnt-metrics [--json] [--font-index N] <font-file>\n\nReads a TrueType or OpenType font file and prints its font-wide metrics.\nFor a font collection (.ttc/.otc), --font-index selects which font to read.\n")
 }
 
 func printText(m *Metrics, path string) {

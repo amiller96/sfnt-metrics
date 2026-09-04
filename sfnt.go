@@ -20,19 +20,64 @@ type tableRecord struct {
 	length uint32
 }
 
-// Parse reads the sfnt table directory out of data and pulls the handful of
-// tables (head, hhea, maxp, OS/2) that carry font-wide metrics. It does not
-// touch glyph outlines, cmap, or naming data.
-func Parse(data []byte) (*Metrics, error) {
+// ttcHeaderSize is the length, in bytes, of the fixed part of a TTC header:
+// tag, version, and numFonts. It is followed by numFonts uint32 offsets,
+// one per font in the collection.
+const ttcHeaderSize = 12
+
+// Parse reads a single sfnt font out of data. If data is a bare font file,
+// index must be 0. If data is a font collection (.ttc/.otc), index selects
+// which of its fonts to read.
+func Parse(data []byte, index int) (*Metrics, error) {
 	if len(data) < 12 {
 		return nil, fmt.Errorf("file too small to be a font")
 	}
 
 	version := binary.BigEndian.Uint32(data[0:4])
+	base := uint32(0)
 	if version == tagCollection {
-		return nil, fmt.Errorf("font collections (.ttc/.otc) are not supported yet")
+		off, err := ttcFontOffset(data, index)
+		if err != nil {
+			return nil, err
+		}
+		base = off
+	} else if index != 0 {
+		return nil, fmt.Errorf("font index %d requested but file is not a font collection", index)
 	}
 
+	return parseSFNT(data, base)
+}
+
+// ttcFontOffset reads the TTC header and returns the file offset of the
+// sfnt table directory for the font at index.
+func ttcFontOffset(data []byte, index int) (uint32, error) {
+	if len(data) < ttcHeaderSize {
+		return 0, fmt.Errorf("truncated ttc header")
+	}
+	numFonts := int(binary.BigEndian.Uint32(data[8:12]))
+	if index < 0 || index >= numFonts {
+		return 0, fmt.Errorf("font index %d out of range (collection has %d fonts)", index, numFonts)
+	}
+	entryOffset := ttcHeaderSize + index*4
+	if len(data) < entryOffset+4 {
+		return 0, fmt.Errorf("truncated ttc directory")
+	}
+	return binary.BigEndian.Uint32(data[entryOffset : entryOffset+4]), nil
+}
+
+// parseSFNT reads the sfnt table directory starting at base and pulls the
+// handful of tables (head, hhea, maxp, OS/2) that carry font-wide metrics.
+// It does not touch glyph outlines, cmap, or naming data beyond the name
+// table itself. base is 0 for a bare font file and the per-font offset
+// found in the TTC header for a font collection; table offsets within the
+// directory are always absolute from the start of the file either way.
+func parseSFNT(data []byte, base uint32) (*Metrics, error) {
+	if uint64(base)+12 > uint64(len(data)) {
+		return nil, fmt.Errorf("truncated font in collection")
+	}
+	start := int(base)
+
+	version := binary.BigEndian.Uint32(data[start : start+4])
 	var format string
 	switch version {
 	case tagTrueType, tagTrue:
@@ -43,16 +88,17 @@ func Parse(data []byte) (*Metrics, error) {
 		return nil, fmt.Errorf("not a recognized sfnt font (unexpected version tag)")
 	}
 
-	numTables := int(binary.BigEndian.Uint16(data[4:6]))
+	numTables := int(binary.BigEndian.Uint16(data[start+4 : start+6]))
 	const dirEntrySize = 16
-	dirEnd := 12 + numTables*dirEntrySize
+	dirStart := start + 12
+	dirEnd := dirStart + numTables*dirEntrySize
 	if numTables < 0 || len(data) < dirEnd {
 		return nil, fmt.Errorf("truncated table directory")
 	}
 
 	tables := make(map[string]tableRecord, numTables)
 	for i := 0; i < numTables; i++ {
-		rec := data[12+i*dirEntrySize : 12+(i+1)*dirEntrySize]
+		rec := data[dirStart+i*dirEntrySize : dirStart+(i+1)*dirEntrySize]
 		tag := string(rec[0:4])
 		tables[tag] = tableRecord{
 			offset: binary.BigEndian.Uint32(rec[8:12]),

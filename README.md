@@ -78,9 +78,15 @@ the Windows and Macintosh platforms, Windows Unicode US English is
 preferred; missing or malformed name data leaves both fields empty rather
 than failing the parse.
 
+Font collections (`.ttc` / `.otc`) are supported. By default the first font
+in the collection is read; pass `--font-index` to pick another:
+
+```
+$ ./sfnt-metrics --font-index 1 ./testdata/NotoSansCJK.ttc
+```
+
 ## Current limitations
 
-- Font collections (`.ttc` / `.otc`) are rejected, not read.
 - One file per invocation.
 
 ## License
