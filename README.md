@@ -85,9 +85,40 @@ in the collection is read; pass `--font-index` to pick another:
 $ ./sfnt-metrics --font-index 1 ./testdata/NotoSansCJK.ttc
 ```
 
-## Current limitations
+## Batch mode
 
-- One file per invocation.
+Pass more than one file and each is read in turn:
+
+```
+$ ./sfnt-metrics ./testdata/Inter-Regular.ttf ./testdata/Inter-Bold.ttf
+```
+
+prints each file's block one after another, separated by a blank line. A
+file that fails to read or parse is reported on stderr and skipped; the
+remaining files are still processed, and the tool exits nonzero if any file
+failed.
+
+With `--json` and a single file, output is unchanged: one metrics object.
+With `--json` and multiple files, output is a JSON array of
+`{"path": ..., "metrics": ...}` objects, one per file that parsed
+successfully:
+
+```
+$ ./sfnt-metrics --json ./testdata/Inter-Regular.ttf ./testdata/Inter-Bold.ttf
+[
+  {
+    "path": "./testdata/Inter-Regular.ttf",
+    "metrics": { "format": "TrueType", "unitsPerEm": 2048, ... }
+  },
+  {
+    "path": "./testdata/Inter-Bold.ttf",
+    "metrics": { "format": "TrueType", "unitsPerEm": 2048, ... }
+  }
+]
+```
+
+`--font-index` applies to every file given, which only matters if you mix
+collection files into the same invocation.
 
 ## License
 
