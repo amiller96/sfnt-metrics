@@ -1,0 +1,20 @@
+{
+  "format": "TrueType",
+  "family": "Golden Test Sans",
+  "style": "Bold Italic",
+  "unitsPerEm": 1000,
+  "numGlyphs": 300,
+  "ascender": 1899,
+  "descender": -501,
+  "lineGap": 0,
+  "weightClass": 700,
+  "widthClass": 5,
+  "italic": true,
+  "typoAscender": 1901,
+  "typoDescender": -499,
+  "typoLineGap": 100,
+  "winAscent": 1950,
+  "winDescent": 550,
+  "capHeight": 700,
+  "xHeight": 520
+}
